@@ -1,18 +1,11 @@
 ---
-title: API Reference
+title: Wink Merchant API Reference
 
 language_tabs: # must be one of https://git.io/vQNgJ
   - shell
-  - ruby
-  - python
-  - javascript
 
 toc_footers:
-  - <a href='#'>Sign Up for a Developer Key</a>
-  - <a href='https://github.com/slatedocs/slate'>Documentation Powered by Slate</a>
-
-includes:
-  - errors
+  - <a href='https://dashboard.getwinkpayments.com'>Wink Merchant Dashboard</a>
 
 search: true
 
@@ -20,226 +13,196 @@ code_clipboard: true
 
 meta:
   - name: description
-    content: Documentation for the Kittn API
+    content: Documentation for the Wink Merchants API
 ---
 
 # Introduction
 
-Welcome to the Kittn API! You can use our API to access Kittn API endpoints, which can get information on various cats, kittens, and breeds in our database.
-
-We have language bindings in Shell, Ruby, Python, and JavaScript! You can view code examples in the dark area to the right, and you can switch the programming language of the examples with the tabs in the top right.
-
-This example API documentation page was created with [Slate](https://github.com/slatedocs/slate). Feel free to edit it and use it as a base for your own API's documentation.
+Welcome to the Wink Merchant API! You can use our API to access your merchant data.
 
 # Authentication
 
 > To authorize, use this code:
 
-```ruby
-require 'kittn'
-
-api = Kittn::APIClient.authorize!('meowmeowmeow')
-```
-
-```python
-import kittn
-
-api = kittn.authorize('meowmeowmeow')
-```
-
 ```shell
-# With shell, you can just pass the correct header with each request
-curl "api_endpoint_here" \
-  -H "Authorization: meowmeowmeow"
+# With curl, you can just pass the correct header with each request
+curl "https://api.getwinkpayments.com/v1/" \
+  -H "X-Wink-MerchantId: merchant-[...]"
+  -H "X-Wink-SecretKey: sk-[env]-[...]"
 ```
 
-```javascript
-const kittn = require('kittn');
+> Make sure to use your Merchant Id and Secret Key.
 
-let api = kittn.authorize('meowmeowmeow');
-```
+Wink Merchant API uses keys to authorize each request. You can get your API keys on your [Wink Merchant Dashboard](http://dashboard.getwinkpayments.com).
 
-> Make sure to replace `meowmeowmeow` with your API key.
+You must include your API keys in all API requests to the server using two Wink specific headers that looks like the following:
 
-Kittn uses API keys to allow access to the API. You can register a new Kittn API key at our [developer portal](http://example.com/developers).
+`X-Wink-MerchantId: merchant-[...]`
 
-Kittn expects for the API key to be included in all API requests to the server in a header that looks like the following:
-
-`Authorization: meowmeowmeow`
+`X-Wink-SecretKey: sk-[env]-[...]`
 
 <aside class="notice">
-You must replace <code>meowmeowmeow</code> with your personal API key.
+You must replace <code>merchantId</code> and <code>secret key</code> with the values provided in your Wink Merchant Dashboard.
 </aside>
 
-# Kittens
+# Environments
 
-## Get All Kittens
+We provide two separate environment:
+* Sandbox
+* Production
 
-```ruby
-require 'kittn'
+You should always first test your implementation on our Sandbox environment before going live.
 
-api = Kittn::APIClient.authorize!('meowmeowmeow')
-api.kittens.get
+## Endpoints
+
+|Url|Environment|
+---|---|
+|https://api-sandbox.getwinkpayments.com|Sandbox|
+
+# Checkout
+
+## Redirect your customer to Wink Checkout
+
+```html
+<html>
+  <head>
+    <title>Buy cool new product</title>
+  </head>
+  <body>
+    <form action="/create-checkout-session" method="POST">
+      <button type="submit">Checkout</button>
+    </form>
+  </body>
+</html>
 ```
 
-```python
-import kittn
+> The above will send a POST request to your server, use the below code in your backend to redirect users to Wink Checkout
 
-api = kittn.authorize('meowmeowmeow')
-api.kittens.get()
-```
 
-```shell
-curl "http://example.com/api/kittens" \
-  -H "Authorization: meowmeowmeow"
-```
+Add a checkout button to your website that calls a server-side endpoint to create a Checkout Session.
 
-```javascript
-const kittn = require('kittn');
+A Checkout Session is the programmatic representation of what your customer sees when they’re redirected to the payment form. You can configure it with options such as:
 
-let api = kittn.authorize('meowmeowmeow');
-let kittens = api.kittens.get();
-```
+* Line Items
+* Taxes
+* Discounts
+* Total Price
+* Currency
 
-> The above command returns JSON structured like this:
-
-```json
-[
-  {
-    "id": 1,
-    "name": "Fluffums",
-    "breed": "calico",
-    "fluffiness": 6,
-    "cuteness": 7
-  },
-  {
-    "id": 2,
-    "name": "Max",
-    "breed": "unknown",
-    "fluffiness": 5,
-    "cuteness": 10
-  }
-]
-```
-
-This endpoint retrieves all kittens.
-
-### HTTP Request
-
-`GET http://example.com/api/kittens`
-
-### Query Parameters
-
-Parameter | Default | Description
---------- | ------- | -----------
-include_cats | false | If set to true, the result will also include cats.
-available | true | If set to false, the result will include kittens that have already been adopted.
-
-<aside class="success">
-Remember — a happy kitten is an authenticated kitten!
+<aside class="notice">
+Your customers will be charged the Total Price you specify in your request. All other items are just displayed in the checkout page as a reference for the customer. Please make sure all numbers adds up!
 </aside>
 
-## Get a Specific Kitten
+The currency you specify in your checkout request must be either your Merchant's currency or Bitcoins.
+If you decide to use another currency you will incur in exchange fees.
 
-```ruby
-require 'kittn'
+You also need to specify:
 
-api = Kittn::APIClient.authorize!('meowmeowmeow')
-api.kittens.get(2)
-```
+* A Success Url, a page on your website to redirect your customer after they complete the payment.
+* A Cancel Url, a page on your website to redirect your customer if they click your logo in Checkout.
 
-```python
-import kittn
+<aside class="notice">
+Checkout Sessions expire 1 hour after creation
+</aside>
 
-api = kittn.authorize('meowmeowmeow')
-api.kittens.get(2)
-```
 
-```shell
-curl "http://example.com/api/kittens/2" \
-  -H "Authorization: meowmeowmeow"
-```
+## Testing
 
-```javascript
-const kittn = require('kittn');
+> Test your endpoint by starting your web server (e.g. localhost:4242) and running the following command:
 
-let api = kittn.authorize('meowmeowmeow');
-let max = api.kittens.get(2);
-```
-
-> The above command returns JSON structured like this:
 
 ```json
-{
-  "id": 2,
-  "name": "Max",
-  "breed": "unknown",
-  "fluffiness": 5,
-  "cuteness": 10
-}
+curl -X POST -is "http://localhost:4242/create-checkout-session" -d ""
 ```
 
-This endpoint retrieves a specific kitten.
-
-<aside class="warning">Inside HTML code blocks like this one, you can't use Markdown, so use <code>&lt;code&gt;</code> blocks to denote code.</aside>
-
-### HTTP Request
-
-`GET http://example.com/kittens/<ID>`
-
-### URL Parameters
-
-Parameter | Description
---------- | -----------
-ID | The ID of the kitten to retrieve
-
-## Delete a Specific Kitten
-
-```ruby
-require 'kittn'
-
-api = Kittn::APIClient.authorize!('meowmeowmeow')
-api.kittens.delete(2)
-```
-
-```python
-import kittn
-
-api = kittn.authorize('meowmeowmeow')
-api.kittens.delete(2)
-```
-
-```shell
-curl "http://example.com/api/kittens/2" \
-  -X DELETE \
-  -H "Authorization: meowmeowmeow"
-```
-
-```javascript
-const kittn = require('kittn');
-
-let api = kittn.authorize('meowmeowmeow');
-let max = api.kittens.delete(2);
-```
-
-> The above command returns JSON structured like this:
+> The above command should return the following:
 
 ```json
-{
-  "id": 2,
-  "deleted" : ":("
-}
+HTTP/1.1 303 See Other
+Location: https://checkout.getwinkpayments.com/pay/...
 ```
 
-This endpoint deletes a specific kitten.
+You should now have a working checkout button that redirects your customer to Wink Checkout.
 
-### HTTP Request
+* Click the checkout button.
+* You’re redirected to the Wink Checkout payment page.
 
-`DELETE http://example.com/kittens/<ID>`
+If your integration isn’t working:
 
-### URL Parameters
+* Open the Network tab in your browser’s developer tools.
+* Click the checkout button and see if an XHR request is made to your server-side endpoint (POST /create-checkout-session).
+* Verify the request is returning a 200 status.
+* Use console.log(session) inside your button click listener to confirm the correct data is returned.
 
-Parameter | Description
---------- | -----------
-ID | The ID of the kitten to delete
+## Show a success page
+
+```html
+<html>
+  <head><title>Thanks for your order!</title></head>
+  <body>
+    <h1>Thanks for your order!</h1>
+    <p>
+      We appreciate your business!
+      If you have any questions, please email
+      <a href="mailto:orders@example.com">orders@example.com</a>.
+    </p>
+  </body>
+</html>
+```
+
+It’s important for your customer to see a success page after they successfully submit the payment form. This success page is hosted on your site.
+
+
+
+# Customers
+
+## List all customers
+
+### HTTP Endpoint
+
+`GET /v1/customers`
+
+## Get a customer
+
+### HTTP Endpoint
+
+`GET /v1/customers/{customerId}'
+
+
+# Transactions
+
+## List all transactions
+
+### HTTP Endpoint
+
+`GET /v1/transactions`
+
+## Get a transaction
+
+
+### HTTP Endpoint
+
+`GET /v1/transactions/{transactionId}`
+
+# Refunds
+
+## Issue a Refund
+
+
+### HTTP Endpoint
+
+`POST /v1/refunds`
+
+
+## Get all refunds
+
+
+### HTTP Endpoint
+
+`GET /v1/refunds`
+
+
+## Get a refund
+
+`GET /v1/refunds/{refundId}`
 
